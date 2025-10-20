@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.test import TestCase
 from django.urls import reverse
 
@@ -12,6 +13,9 @@ class BookTests(TestCase):
         cls.user = get_user_model().objects.create_user(
             username="testuser", email="testuser@example.com", password="testpass"
         )
+
+        cls.special_permission = Permission.objects.get(codename="special_status")
+
         cls.book = Book.objects.create(
             title="Test Book", author="Test Author", price=19.99
         )
@@ -25,13 +29,21 @@ class BookTests(TestCase):
         self.assertEqual(self.book.author, "Test Author")
         self.assertEqual(self.book.price, 19.99)
 
-    def test_book_list_view(self):
+    def test_book_list_view_logged_in_users(self):
+        self.client.login(email="testuser@example.com", password="testpass")
         response = self.client.get(reverse("book_list"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.book.title)
-        self.assertTemplateUsed(response, "books/book_list.html")
 
-    def test_book_detail_view(self):
+    def test_book_list_view_logged_out_users(self):
+        self.client.logout()
+        response = self.client.get(reverse("book_list"))
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, "/accounts/login/?next=/books/")
+
+    def test_book_detail_view_with_permissions(self):
+        self.client.login(email="testuser@example.com", password="testpass")
+        self.user.user_permissions.add(self.special_permission)
         response = self.client.get(reverse("book_detail", args=[self.book.id]))
         self.assertEqual(response.status_code, 200)
         no_response = self.client.get("/books/invalid-id/")
