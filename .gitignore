@@ -6,3 +6,5 @@ db.sqlite3
 # Static files
 staticfiles/
 static/
+
+docker-compose-prod.yml
