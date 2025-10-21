@@ -2,3 +2,9 @@
 __pycache__/
 db.sqlite3
 .DS_Store
+
+# Static files
+staticfiles/
+static/
+
+docker-compose-prod.yml
